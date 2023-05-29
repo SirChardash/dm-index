@@ -1,4 +1,6 @@
 import os
+import re
+from tkinter import StringVar
 
 import customtkinter
 from PIL import Image
@@ -49,11 +51,35 @@ def toggle_image_visibility(path):
         visible_images[path] = label
 
 
-row = -1
-for filename in next(os.walk(config.get('dir')), (None, None, []))[2]:
-    row = row + 1
-    button = customtkinter.CTkCheckBox(button_frame, text=filename)
+search_value = StringVar(value='')
+all_buttons = dict()
+
+
+def filter_entries():
+    for name, entry in all_buttons.items():
+        if search_value.get().lower() not in name.lower() and search_value.get() != '':
+            entry.pack_forget()
+        else:
+            entry.pack(pady=5, padx=5, fill='x')
+
+
+filenames = next(os.walk(config.get('dir')), (None, None, []))[2]
+
+search_box = customtkinter.CTkEntry(button_frame, textvariable=search_value, height=32)
+search_box.pack(padx=5, pady=5, fill='x')
+search_box.bind('<KeyRelease>', lambda e: filter_entries())
+
+
+def format_label(string):
+    result = re.sub('\\....$', '', string)  # remove ext
+    result = re.sub('\\s#[A-Z]+', '', result)  # custom tags
+    return result
+
+
+for filename in filenames:
+    button = customtkinter.CTkCheckBox(button_frame, text=format_label(filename))
     button.configure(command=lambda path=filename, b=button: toggle_image_visibility(path))
-    button.grid(row=row, column=0, sticky='ew', pady=5, padx=(5, 15))
+    button.pack(pady=5, padx=5, fill='x')
+    all_buttons[filename] = button
 
 app.mainloop()
